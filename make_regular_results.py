@@ -62,10 +62,6 @@ def get_top_answers(queries, k=100):
         all_top_answers[list(queries.keys())[i]] = [(list(collection_dic.keys())[idx], score.item()) for idx, score in zip(top_k.indices, top_k.values)]
     return all_top_answers
 
-
-# CROSS-ENCODER
-cross_encoder = CrossEncoder('cross-encoder/ms-marco-TinyBERT-L-2-v2', default_activation_function=torch.nn.Sigmoid(), device=device)
-
 # This method reranks the top answers for a query, using the results from the get_top_answers method
 def rerank_top_answers(query, top_answers):
     # create a list of pairs of query and answer
@@ -105,20 +101,24 @@ for query_id in dic_topics:
     queries[query_id] = "[TITLE]" + dic_topics[query_id][0] + "[BODY]" + dic_topics[query_id][1]
 for query_id in dic_topics_2:
     queries2[query_id] = "[TITLE]" + dic_topics_2[query_id][0] + "[BODY]" + dic_topics_2[query_id][1]
-print("Making answer collection")
+print("Making answer collection.")
 collection_dic = read_collection(sys.argv[3]) # collection_dic = answer_id {text}
+print("Done making collections.")
 
 ## BI-ENCODER ##
+print("Making Bi-Encoder")
 bi_encoder = SentenceTransformer('all-MiniLM-L6-v2')
 bi_encoder = bi_encoder.to(device)
 # get the embeddings of the answers
 print("Embedding answers")
 answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_tensor=True, show_progress_bar=True)
-# making sure the biencoder uses the gpu
 
-## TOPIC 1 #
+# CROSS-ENCODER
+print("Making Cross-Encoder")
+cross_encoder = CrossEncoder('cross-encoder/ms-marco-TinyBERT-L-2-v2', default_activation_function=torch.nn.Sigmoid(), device=device)
 
-print("making binary encoder results topic 1:")
+## TOPIC 1 ##
+print("Making Bi-Encoder results for topic 1:")
 start_time = time.time()
 biencoder_top_answers = get_top_answers(queries, k=100) #BI-ENCODER RESULTS
 end_time = time.time()
@@ -126,7 +126,7 @@ execution_time = end_time - start_time
 print(f"Execution time for binary encoder: {execution_time:.4f} seconds")
 make_tsv_file(biencoder_top_answers,"result_bi_1.tsv")
 
-print("making cross encoder results:")
+print("Making cross encoder results:")
 start_time = time.time()
 reranked_results = {qid: rerank_top_answers(queries[qid], biencoder_top_answers[qid]) for qid in biencoder_top_answers}  #CROSS ENCODER RESULTS
 end_time = time.time()
@@ -143,7 +143,7 @@ execution_time = end_time - start_time
 print(f"Execution time for binary encoder: {execution_time:.4f} seconds")
 make_tsv_file(biencoder_top_answers_2,"result_bi_2.tsv")
 
-print("making cross encoder results:")
+print("Making cross encoder results:")
 start_time = time.time()
 reranked_results_2 = {qid: rerank_top_answers(queries2[qid], biencoder_top_answers_2[qid]) for qid in biencoder_top_answers_2}  #CROSS ENCODER RESULTS
 end_time = time.time()
