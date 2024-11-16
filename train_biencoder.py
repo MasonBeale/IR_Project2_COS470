@@ -61,7 +61,7 @@ def read_qrel_file(qrel_filepath):
 
 def load_topic_file(topic_filepath):
     # a method used to read the topic file for this year of the lab; to be passed to BERT/PyTerrier methods
-    queries = json.load(open(topic_filepath))
+    queries = json.load(open(topic_filepath, encoding="utf-8"))
     result = {}
     for item in queries:
       # You may do additional preprocessing here
@@ -74,7 +74,7 @@ def load_topic_file(topic_filepath):
 
 def read_collection(answer_filepath):
   # Reading collection to a dictionary
-  lst = json.load(open(answer_filepath))
+  lst = json.load(open(answer_filepath, encoding="utf-8"))
   result = {}
   for doc in lst:
     result[doc['Id']] = remove_special_characters_and_lowercase(remove_tags(BeautifulSoup(doc['Text'],"html.parser")))
