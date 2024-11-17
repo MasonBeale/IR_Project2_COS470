@@ -133,19 +133,27 @@ tokens = ["[TITLE]", "[BODY]"]
 model.tokenizer.add_tokens(tokens, special_tokens=True)
 model.model.resize_token_embeddings(len(model.tokenizer))
 
-num_epochs = 2
+num_epochs = 50
 model_save_path = "./ft_cr_2024"
 train_dataloader = DataLoader(train_samples, shuffle=True, batch_size=4)
 # During training, we use CESoftmaxAccuracyEvaluator to measure the accuracy on the dev set.
 evaluator = CERerankingEvaluator(valid_samples, name='train-eval')
 warmup_steps = math.ceil(len(train_dataloader) * num_epochs * 0.1)  # 10% of train data for warm-up
 train_loss = losses.MultipleNegativesRankingLoss(model=model)
-model.fit(train_dataloader=train_dataloader,
-          evaluator=evaluator,
-          epochs=num_epochs,
-          warmup_steps=warmup_steps,
-          output_path=model_save_path,
-          save_best_model=True)
+# Inside your model.fit() loop, add a condition to save the model every 10 epochs
+for epoch in range(num_epochs):
+    model.fit(train_dataloader=train_dataloader,
+              evaluator=evaluator,
+              epochs=1,  # Train for one epoch at a time
+              warmup_steps=warmup_steps,
+              output_path=model_save_path,
+              save_best_model=True)
+
+    # Save the model every 10 epochs
+    if (epoch + 1) % 10 == 0:
+        epoch_model_path = f"{model_save_path}_epoch_{epoch + 1}"
+        model.save(epoch_model_path)
+        print(f"Model saved at epoch {epoch + 1} to {epoch_model_path}")
 
 model.save(model_save_path)
 print("Model saved")
