@@ -1,22 +1,11 @@
-import csv
-import datetime
 import json
 import string
 import time
-import math
-import random
-import os
 import re
 import sys
 from bs4 import BeautifulSoup 
-from string import punctuation
 import torch
-from sentence_transformers import InputExample
-from sentence_transformers.cross_encoder.evaluation import CESoftmaxAccuracyEvaluator, CEBinaryClassificationEvaluator, \
-    CERerankingEvaluator
-from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, SentencesDataset, InputExample, CrossEncoder, util, losses, evaluation
-from itertools import islice
+from sentence_transformers import SentenceTransformer, CrossEncoder, util
 
 if len(sys.argv) != 4:
     print("Usage: python making_ft_results.py <topics_1.json> <topics_2.json> <Answers.json>")
@@ -61,22 +50,6 @@ def read_collection(answer_filepath):
     result[doc['Id']] = remove_special_characters_and_lowercase(remove_tags(BeautifulSoup(doc['Text'],"html.parser")))
   return result
 
-## reading queries and collection
-dic_topics = load_topic_file(sys.argv[1]) # dic_topic = answer_id {text}
-dic_topics_2 = load_topic_file(sys.argv[2]) # dic_topic = answer_id {text}
-queries = {}
-queries2 = {}
-for query_id in dic_topics:
-    queries[query_id] = "[TITLE]" + dic_topics[query_id][0] + "[BODY]" + dic_topics[query_id][1]
-for query_id in dic_topics_2:
-    queries2[query_id] = "[TITLE]" + dic_topics_2[query_id][0] + "[BODY]" + dic_topics_2[query_id][1]
-collection_dic = read_collection(sys.argv[3]) # collection_dic = answer_id {text}
-
-## BI-ENCODER ##
-bi_encoder = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_10')
-answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_tensor=True)
-bi_encoder = bi_encoder.to(device)
-
 # This method returns the top k answers for a given query
 def get_top_answers(queries, k=100):
     # get the embeddings of the queries
@@ -93,8 +66,7 @@ def get_top_answers(queries, k=100):
     return all_top_answers
 
 
-# CROSS-ENCODER
-cross_encoder = CrossEncoder('ft_cr_2024', default_activation_function=torch.nn.Sigmoid(), device=device)
+
 # This method reranks the top answers for a given query, using the results from the get_top_answers method
 def rerank_top_answers(query, top_answers):
     # create pairs of query and answer
@@ -121,6 +93,25 @@ def make_reranked_tsv_file(dictionary, file_name):
             for (answer_id, _), score in answers:  
                 file.write(f"{query}\tQ0\t{answer_id}\t{rank}\t{score}\tft_cr_2024/(cross-encoder/ms-marco-TinyBERT-L-2-v2)_epoch_2\n")
                 rank += 1
+
+## reading queries and collection
+dic_topics = load_topic_file(sys.argv[1]) # dic_topic = answer_id {text}
+dic_topics_2 = load_topic_file(sys.argv[2]) # dic_topic = answer_id {text}
+queries = {}
+queries2 = {}
+for query_id in dic_topics:
+    queries[query_id] = "[TITLE]" + dic_topics[query_id][0] + "[BODY]" + dic_topics[query_id][1]
+for query_id in dic_topics_2:
+    queries2[query_id] = "[TITLE]" + dic_topics_2[query_id][0] + "[BODY]" + dic_topics_2[query_id][1]
+collection_dic = read_collection(sys.argv[3]) # collection_dic = answer_id {text}
+
+## BI-ENCODER ##
+bi_encoder = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_10')
+answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder = bi_encoder.to(device)
+
+# CROSS-ENCODER
+cross_encoder = CrossEncoder('ft_cr_2024', default_activation_function=torch.nn.Sigmoid(), device=device)
 
 ## TOPIC 1 #
 # Example usage
