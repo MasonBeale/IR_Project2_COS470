@@ -8,7 +8,7 @@ import torch
 from sentence_transformers import SentenceTransformer, CrossEncoder, util
 
 if len(sys.argv) != 4:
-    print("Usage: python making_ft_results.py <topics_1.json> <topics_2.json> <Answers.json>")
+    print("Usage: python make_ft_results.py <topics_1.json> <topics_2.json> <Answers.json>")
     sys.exit(1)
 
 # Check if a GPU is available
@@ -32,7 +32,7 @@ def remove_tags(soup):
 
 def load_topic_file(topic_filepath):
     # a method used to read the topic file for this year of the lab; to be passed to BERT/PyTerrier methods
-    queries = json.load(open(topic_filepath))
+    queries = json.load(open(topic_filepath, encoding='utf-8'))
     result = {}
     for item in queries:
       # returing results as dictionary of topic id: [title, body, tag]
@@ -44,7 +44,7 @@ def load_topic_file(topic_filepath):
 
 def read_collection(answer_filepath):
   # Reading collection to a dictionary
-  lst = json.load(open(answer_filepath))
+  lst = json.load(open(answer_filepath, encoding='utf-8'))
   result = {}
   for doc in lst:
     result[doc['Id']] = remove_special_characters_and_lowercase(remove_tags(BeautifulSoup(doc['Text'],"html.parser")))
@@ -83,7 +83,13 @@ def make_tsv_file(dictionary,file_name, runname):
            for answer_id, score in answers:
                file.write(f"{query_id}\tQ0\t{answer_id}\t{rank}\t{score}\t{runname}\n")
                rank += 1
-
+def make_reranked_tsv_file(dictionary, file_name, run_name):
+    with open(file_name, "w") as file:  
+        for query, answers in dictionary.items():
+            rank = 1
+            for (answer_id, _), score in answers:  
+                file.write(f"{query}\tQ0\t{answer_id}\t{rank}\t{score}\t{run_name}\n")
+                rank += 1
 
 ## reading queries and collection
 dic_topics = load_topic_file(sys.argv[1]) # dic_topic = answer_id {text}
@@ -102,11 +108,11 @@ answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_
 bi_encoder = bi_encoder.to(device)
 
 # CROSS-ENCODER
-cross_encoder10 = CrossEncoder('/FT_cross_encoders/ft_cr_2024_epoch_10', default_activation_function=torch.nn.Sigmoid(), device=device)
-cross_encoder20 = CrossEncoder('/FT_cross_encoders/ft_cr_2024_epoch_20', default_activation_function=torch.nn.Sigmoid(), device=device)
-cross_encoder30 = CrossEncoder('/FT_cross_encoders/ft_cr_2024_epoch_30', default_activation_function=torch.nn.Sigmoid(), device=device)
-cross_encoder40 = CrossEncoder('/FT_cross_encoders/ft_cr_2024_epoch_40', default_activation_function=torch.nn.Sigmoid(), device=device)
-cross_encoder50 = CrossEncoder('/FT_cross_encoders/ft_cr_2024_epoch_50', default_activation_function=torch.nn.Sigmoid(), device=device)
+cross_encoder10 = CrossEncoder('FT_cross_encoders\\ft_cr_2024_epoch_10', default_activation_function=torch.nn.Sigmoid(), device=device)
+cross_encoder20 = CrossEncoder('FT_cross_encoders\\ft_cr_2024_epoch_20', default_activation_function=torch.nn.Sigmoid(), device=device)
+cross_encoder30 = CrossEncoder('FT_cross_encoders\\ft_cr_2024_epoch_30', default_activation_function=torch.nn.Sigmoid(), device=device)
+cross_encoder40 = CrossEncoder('FT_cross_encoders\\ft_cr_2024_epoch_40', default_activation_function=torch.nn.Sigmoid(), device=device)
+cross_encoder50 = CrossEncoder('FT_cross_encoders\\ft_cr_2024_epoch_50', default_activation_function=torch.nn.Sigmoid(), device=device)
 
 print("making binary encoder results topic 1:")
 start_time = time.time()
@@ -121,7 +127,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder10, queries[qid], bienc
 end_time = time.time()
 execution_time = end_time - start_time  
 print(f"Execution time for cross encoder10 topic 1: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft10_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_10")
+make_reranked_tsv_file(reranked_results, "result_ce_ft10_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_10")
 
 print("making cross encoder 20 results:")
 start_time = time.time()
@@ -129,7 +135,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder20, queries[qid], bienc
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder20 topic 1: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft20_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_20")
+make_reranked_tsv_file(reranked_results, "result_ce_ft20_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_20")
 
 print("making cross encoder 30 results:")
 start_time = time.time()
@@ -137,7 +143,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder30, queries[qid], bienc
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder30 topic 1: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "cresult_ce_ft30_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_30")
+make_reranked_tsv_file(reranked_results, "result_ce_ft30_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_30")
 
 print("making cross encoder 40 results:")
 start_time = time.time()
@@ -145,7 +151,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder40, queries[qid], bienc
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder40 topic 1: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft40_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_40")
+make_reranked_tsv_file(reranked_results, "result_ce_ft40_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_40")
 
 print("making cross encoder 50 results:")
 start_time = time.time()
@@ -153,7 +159,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder50, queries[qid], bienc
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder50 topic 1: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft50_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_50")
+make_reranked_tsv_file(reranked_results, "result_ce_ft50_1.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_50")
 
 print("making binary encoder results topic 2:")
 start_time = time.time()
@@ -168,7 +174,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder10, queries2[qid], bien
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder10 topic 2: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft10_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_10")
+make_reranked_tsv_file(reranked_results, "result_ce_ft10_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_10")
 
 print("making cross encoder 20 results:")
 start_time = time.time()
@@ -176,7 +182,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder20, queries2[qid], bien
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder20 topic 2: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft20_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_20")
+make_reranked_tsv_file(reranked_results, "result_ce_ft20_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_20")
 
 print("making cross encoder 30 results:")
 start_time = time.time()
@@ -184,7 +190,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder30, queries2[qid], bien
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder30 topic 2: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft30_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_30")
+make_reranked_tsv_file(reranked_results, "result_ce_ft30_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_30")
 
 print("making cross encoder 40 results:")
 start_time = time.time()
@@ -192,7 +198,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder40, queries2[qid], bien
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder40 topic 2: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft40_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_40")
+make_reranked_tsv_file(reranked_results, "result_ce_ft40_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_40")
 
 print("making cross encoder 50 results:")
 start_time = time.time()
@@ -200,7 +206,7 @@ reranked_results = {qid: rerank_top_answers(cross_encoder50, queries2[qid], bien
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for cross encoder50 topic 2: {execution_time:.4f} seconds")
-make_tsv_file(reranked_results, "result_ce_ft50_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_50")
+make_reranked_tsv_file(reranked_results, "result_ce_ft50_2.tsv", "cross-encoder/ms-marco-TinyBERT-L-2-v2_epoch_50")
 
 
 
