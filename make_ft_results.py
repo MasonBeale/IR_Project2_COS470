@@ -19,7 +19,7 @@ from sentence_transformers import SentenceTransformer, SentencesDataset, InputEx
 from itertools import islice
 
 if len(sys.argv) != 4:
-    print("Usage: python making_ft_results.py <topics_1.json> <topics_2.json> <Answers.json>")
+    print("Usage: python make_ft_results.py <topics_1.json> <topics_2.json> <Answers.json>")
     sys.exit(1)
 
 # Check if a GPU is available
@@ -89,12 +89,12 @@ def rerank_top_answers(cross_encoder, query, top_answers):
     return reranked_answers[:100]
 
 # This method creates a tsv file with the results for binary encoder
-def make_tsv_file(dictionary,file_name, bi_encoder):
+def make_tsv_file(dictionary,file_name, runname):
    with open(file_name, "w") as file:  
        for query_id,answers in dictionary.items():
            rank = 1
            for answer_id, score in answers:
-               file.write(f"{query_id}\tQ0\t{answer_id}\t{rank}\t{score}\t{bi_encoder._get_name}\n")
+               file.write(f"{query_id}\tQ0\t{answer_id}\t{rank}\t{score}\t{runname}\n")
                rank += 1
 # This method creates a tsv file with the results for cross encoder
 def make_reranked_tsv_file(dictionary, file_name, cross_encoder):
@@ -128,7 +128,7 @@ biencoder_top_answers = get_top_answers(bi_encoder,queries, k=100) #BI-ENCODER R
 end_time = time.time()
 execution_time = end_time - start_time  
 print(f"Execution time for binary10 encoder: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft10_1.tsv", bi_encoder)
+make_tsv_file(biencoder_top_answers,"result_bi_ft10_1.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_10')
 
 # # CROSS-ENCODER
 # cross_encoder10 = CrossEncoder('ft_cr_2024_epoch_10', default_activation_function=torch.nn.Sigmoid(), device=device)
@@ -156,7 +156,7 @@ biencoder_top_answers_2 = get_top_answers(bi_encoder,queries2, k=100) #BI-ENCODE
 end_time = time.time()
 execution_time = end_time - start_time  
 print(f"Execution time for binary encoder: {execution_time:.4f} seconds")
-make_tsv_file(bi_encoder,biencoder_top_answers_2,"result_bi_ft_2.tsv")
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft_2.tsv",'finetuned_all-MiniLM-L6-v2_epoch_10')
 
 # print("making cross encoder results:")
 # start_time = time.time()
@@ -177,7 +177,7 @@ biencoder_top_answers = get_top_answers(bi_encoder20,queries, k=100) #BI-ENCODER
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder20: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft20_1.tsv", bi_encoder20)
+make_tsv_file(biencoder_top_answers,"result_bi_ft20_1.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_20')
 
 print("making binary encoder results topic 2:")
 start_time = time.time()
@@ -185,7 +185,7 @@ biencoder_top_answers_2 = get_top_answers(bi_encoder20,queries2, k=100) #BI-ENCO
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder20: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers_2,"result_bi_ft20_2.tsv", bi_encoder20)
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft20_2.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_20')
 
 ## BI-ENCODER 30##
 bi_encoder30 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_30')
@@ -198,7 +198,7 @@ biencoder_top_answers = get_top_answers(bi_encoder30,queries, k=100) #BI-ENCODER
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder30: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft30_1.tsv", bi_encoder30)
+make_tsv_file(biencoder_top_answers,"result_bi_ft30_1.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_30')
 
 print("making binary encoder results topic 2:")
 start_time = time.time()
@@ -206,7 +206,7 @@ biencoder_top_answers_2 = get_top_answers(bi_encoder30,queries2, k=100) #BI-ENCO
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder30: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers_2,"result_bi_ft30_2.tsv", bi_encoder30)
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft30_2.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_30')
 
 ## BI-ENCODER 40##
 bi_encoder40 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_40')
@@ -219,7 +219,7 @@ biencoder_top_answers = get_top_answers(bi_encoder40,queries, k=100) #BI-ENCODER
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder40: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft40_1.tsv", bi_encoder40)
+make_tsv_file(biencoder_top_answers,"result_bi_ft40_1.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_40')
 
 print("making binary encoder results topic 2:")
 start_time = time.time()
@@ -227,7 +227,7 @@ biencoder_top_answers_2 = get_top_answers(bi_encoder40,queries2, k=100) #BI-ENCO
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder40: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers_2,"result_bi_ft40_2.tsv", bi_encoder40)
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft40_2.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_40')
 
 ## BI-ENCODER 50##
 bi_encoder50 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_50')
@@ -240,7 +240,7 @@ biencoder_top_answers = get_top_answers(bi_encoder50,queries, k=100) #BI-ENCODER
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder50: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft50_1.tsv", bi_encoder50)
+make_tsv_file(biencoder_top_answers,"result_bi_ft50_1.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_50')
 
 print("making binary encoder results topic 2:")
 start_time = time.time()
@@ -248,6 +248,6 @@ biencoder_top_answers_2 = get_top_answers(bi_encoder50,queries2, k=100) #BI-ENCO
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time for binary encoder50: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers_2,"result_bi_ft50_2.tsv", bi_encoder50)
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft50_2.tsv", 'finetuned_all-MiniLM-L6-v2_epoch_50')
 
 
