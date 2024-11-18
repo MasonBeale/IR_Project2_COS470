@@ -5,7 +5,7 @@ import json
 import matplotlib.pyplot as plt
 
 results = {}
-with open('result_ce_1.tsv', mode='r', newline='') as file:
+with open('ft_bi_results\\result_bi_ft50_1.tsv', mode='r', newline='') as file:
     reader = csv.reader(file, delimiter='\t')
     for line in reader:
         topicID = line[0]
@@ -52,7 +52,7 @@ for topic in eval:
     }
 
 # Save the query results to a JSON file
-with open('evaluation_result_ce_1.json', 'w') as json_file:
+with open('eval_bi_e10.json', 'w') as json_file:
     json.dump(query_results, json_file, indent=4)
 
 # Calculate averages
@@ -89,20 +89,20 @@ P_5_values_sorted = sorted(P_5_Topic_ID, key=lambda x: P_5_Topic_ID[x], reverse=
 vals = [P_5_Topic_ID[id] for id in P_5_values_sorted]
 
 # Plot P@5 values
-plt.figure(figsize=(10, 6))
-plt.plot(P_5_values_sorted, vals, marker='o', linestyle='-', color='b')
+# plt.figure(figsize=(10, 6))
+# plt.plot(P_5_values_sorted, vals, marker='o', linestyle='-', color='b')
 
-# Label the axes
-plt.xlabel('DocID')
-plt.ylabel('P@5')
-plt.title('P@5 for Untrained Cross-Encoder (topics_1)')
+# # Label the axes
+# plt.xlabel('DocID')
+# plt.ylabel('P@5')
+# plt.title('P@5 for Untrained Cross-Encoder (topics_1)')
 
-plt.xticks(rotation=60, fontsize=5)
-xticks = plt.gca().get_xticks()
-plt.xticks(xticks[::100])  # Show every 10th tick
+# plt.xticks(rotation=60, fontsize=5)
+# xticks = plt.gca().get_xticks()
+# plt.xticks(xticks[::100])  # Show every 10th tick
 
-# Show the plot
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# # Show the plot
+# plt.legend()
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
