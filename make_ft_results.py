@@ -61,24 +61,9 @@ def read_collection(answer_filepath):
     result[doc['Id']] = remove_special_characters_and_lowercase(remove_tags(BeautifulSoup(doc['Text'],"html.parser")))
   return result
 
-## reading queries and collection
-dic_topics = load_topic_file(sys.argv[1]) # dic_topic = answer_id {text}
-dic_topics_2 = load_topic_file(sys.argv[2]) # dic_topic = answer_id {text}
-queries = {}
-queries2 = {}
-for query_id in dic_topics:
-    queries[query_id] = "[TITLE]" + dic_topics[query_id][0] + "[BODY]" + dic_topics[query_id][1]
-for query_id in dic_topics_2:
-    queries2[query_id] = "[TITLE]" + dic_topics_2[query_id][0] + "[BODY]" + dic_topics_2[query_id][1]
-collection_dic = read_collection(sys.argv[3]) # collection_dic = answer_id {text}
-
-## BI-ENCODER ##
-bi_encoder = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_10')
-answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_tensor=True)
-bi_encoder = bi_encoder.to(device)
 
 # This method returns the top k answers for a given query
-def get_top_answers(queries, k=100):
+def get_top_answers(bi_encoder,queries, k=100):
     # get the embeddings of the queries
     query_embeddings = bi_encoder.encode(list(queries.values()), convert_to_tensor=True)
     all_top_answers = {}
@@ -93,10 +78,8 @@ def get_top_answers(queries, k=100):
     return all_top_answers
 
 
-# CROSS-ENCODER
-cross_encoder = CrossEncoder('ft_cr_2024', default_activation_function=torch.nn.Sigmoid(), device=device)
 # This method reranks the top answers for a given query, using the results from the get_top_answers method
-def rerank_top_answers(query, top_answers):
+def rerank_top_answers(cross_encoder, query, top_answers):
     # create pairs of query and answer
     pairs = [(query, collection_dic[answer_id]) for answer_id, _ in top_answers]
     # get the scores of the pairs
@@ -106,15 +89,15 @@ def rerank_top_answers(query, top_answers):
     return reranked_answers[:100]
 
 # This method creates a tsv file with the results for binary encoder
-def make_tsv_file(dictionary,file_name):
+def make_tsv_file(dictionary,file_name, bi_encoder):
    with open(file_name, "w") as file:  
        for query_id,answers in dictionary.items():
            rank = 1
            for answer_id, score in answers:
-               file.write(f"{query_id}\tQ0\t{answer_id}\t{rank}\t{score}\tfinetuned_all-MiniLM-L6-v2_epoch_10\n")
+               file.write(f"{query_id}\tQ0\t{answer_id}\t{rank}\t{score}\t{bi_encoder._get_name}\n")
                rank += 1
 # This method creates a tsv file with the results for cross encoder
-def make_reranked_tsv_file(dictionary, file_name):
+def make_reranked_tsv_file(dictionary, file_name, cross_encoder):
     with open(file_name, "w") as file:  
         for query, answers in dictionary.items():
             rank = 1
@@ -122,37 +105,149 @@ def make_reranked_tsv_file(dictionary, file_name):
                 file.write(f"{query}\tQ0\t{answer_id}\t{rank}\t{score}\tft_cr_2024/(cross-encoder/ms-marco-TinyBERT-L-2-v2)_epoch_2\n")
                 rank += 1
 
-## TOPIC 1 #
-# Example usage
-print("making binary encoder results topic 1:")
-start_time = time.time()
-biencoder_top_answers = get_top_answers(queries, k=100) #BI-ENCODER RESULTS
-end_time = time.time()
-execution_time = end_time - start_time  
-print(f"Execution time for binary encoder: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers,"result_bi_ft_1.tsv")
+## reading queries and collection
+dic_topics = load_topic_file(sys.argv[1]) 
+dic_topics_2 = load_topic_file(sys.argv[2]) 
+queries = {}
+queries2 = {}
+for query_id in dic_topics:
+    queries[query_id] = "[TITLE]" + dic_topics[query_id][0] + "[BODY]" + dic_topics[query_id][1]
+for query_id in dic_topics_2:
+    queries2[query_id] = "[TITLE]" + dic_topics_2[query_id][0] + "[BODY]" + dic_topics_2[query_id][1]
+collection_dic = read_collection(sys.argv[3]) # collection_dic = answer_id {text}
 
-print("making cross encoder results:")
+## BI-ENCODER 10##
+bi_encoder = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_10')
+answers_embedding = bi_encoder.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder = bi_encoder.to(device)
+
+## TOPIC 1 #
+print("making binary encoder 10 results topic 1:")
 start_time = time.time()
-reranked_results = {qid: rerank_top_answers(queries[qid], biencoder_top_answers[qid]) for qid in biencoder_top_answers}  #CROSS ENCODER RESULTS
+biencoder_top_answers = get_top_answers(bi_encoder,queries, k=100) #BI-ENCODER RESULTS
 end_time = time.time()
 execution_time = end_time - start_time  
-print(f"Execution time for cross encoder topic 1: {execution_time:.4f} seconds")
-make_reranked_tsv_file(reranked_results,"result_ce_ft_1.tsv")
+print(f"Execution time for binary10 encoder: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers,"result_bi_ft10_1.tsv", bi_encoder)
+
+# # CROSS-ENCODER
+# cross_encoder10 = CrossEncoder('ft_cr_2024_epoch_10', default_activation_function=torch.nn.Sigmoid(), device=device)
+# print("making cross encoder 10 results:")
+# start_time = time.time()
+# reranked_results = {qid: rerank_top_answers(cross_encoder10, queries[qid], biencoder_top_answers[qid]) for qid in biencoder_top_answers}  #CROSS ENCODER RESULTS
+# end_time = time.time()
+# execution_time = end_time - start_time  
+# print(f"Execution time for cross encoder10 topic 1: {execution_time:.4f} seconds")
+# make_reranked_tsv_file(reranked_results,"result_ce_ft10_1.tsv")
+
+# cross_encoder20 = CrossEncoder('ft_cr_2024_epoch_20', default_activation_function=torch.nn.Sigmoid(), device=device)
+# print("making cross encoder 20 results:")
+# start_time = time.time()
+# reranked_results = {qid: rerank_top_answers(cross_encoder20, queries[qid], biencoder_top_answers[qid]) for qid in biencoder_top_answers}  #CROSS ENCODER RESULTS
+# end_time = time.time()
+# execution_time = end_time - start_time
+# print(f"Execution time for cross encoder20 topic 1: {execution_time:.4f} seconds")
+
 
 ## TOPIC 2 ## 
 print("making binary encoder results topic 2:")
 start_time = time.time()
-biencoder_top_answers_2 = get_top_answers(queries2, k=100) #BI-ENCODER RESULTS
+biencoder_top_answers_2 = get_top_answers(bi_encoder,queries2, k=100) #BI-ENCODER RESULTS
 end_time = time.time()
 execution_time = end_time - start_time  
 print(f"Execution time for binary encoder: {execution_time:.4f} seconds")
-make_tsv_file(biencoder_top_answers_2,"result_bi_ft_2.tsv")
+make_tsv_file(bi_encoder,biencoder_top_answers_2,"result_bi_ft_2.tsv")
 
-print("making cross encoder results:")
+# print("making cross encoder results:")
+# start_time = time.time()
+# reranked_results_2 = {qid: rerank_top_answers(queries2[qid], biencoder_top_answers_2[qid]) for qid in biencoder_top_answers_2}  #CROSS ENCODER RESULTS
+# end_time = time.time()
+# execution_time = end_time - start_time  
+# print(f"Execution time for cross encoder: {execution_time:.4f} seconds")
+# make_reranked_tsv_file(reranked_results_2,"result_ce_ft_2.tsv")
+
+## BI-ENCODER 20##
+bi_encoder20 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_20')
+answers_embedding = bi_encoder20.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder20 = bi_encoder20.to(device)
+
+print("making binary encoder results topic 1:")
 start_time = time.time()
-reranked_results_2 = {qid: rerank_top_answers(queries2[qid], biencoder_top_answers_2[qid]) for qid in biencoder_top_answers_2}  #CROSS ENCODER RESULTS
+biencoder_top_answers = get_top_answers(bi_encoder20,queries, k=100) #BI-ENCODER RESULTS
 end_time = time.time()
-execution_time = end_time - start_time  
-print(f"Execution time for cross encoder: {execution_time:.4f} seconds")
-make_reranked_tsv_file(reranked_results_2,"result_ce_ft_2.tsv")
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder20: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers,"result_bi_ft20_1.tsv", bi_encoder20)
+
+print("making binary encoder results topic 2:")
+start_time = time.time()
+biencoder_top_answers_2 = get_top_answers(bi_encoder20,queries2, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder20: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft20_2.tsv", bi_encoder20)
+
+## BI-ENCODER 30##
+bi_encoder30 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_30')
+answers_embedding = bi_encoder30.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder30 = bi_encoder30.to(device)
+
+print("making binary encoder results topic 1:")
+start_time = time.time()
+biencoder_top_answers = get_top_answers(bi_encoder30,queries, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder30: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers,"result_bi_ft30_1.tsv", bi_encoder30)
+
+print("making binary encoder results topic 2:")
+start_time = time.time()
+biencoder_top_answers_2 = get_top_answers(bi_encoder30,queries2, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder30: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft30_2.tsv", bi_encoder30)
+
+## BI-ENCODER 40##
+bi_encoder40 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_40')
+answers_embedding = bi_encoder40.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder40 = bi_encoder40.to(device)
+
+print("making binary encoder results topic 1:")
+start_time = time.time()
+biencoder_top_answers = get_top_answers(bi_encoder40,queries, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder40: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers,"result_bi_ft40_1.tsv", bi_encoder40)
+
+print("making binary encoder results topic 2:")
+start_time = time.time()
+biencoder_top_answers_2 = get_top_answers(bi_encoder40,queries2, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder40: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft40_2.tsv", bi_encoder40)
+
+## BI-ENCODER 50##
+bi_encoder50 = SentenceTransformer('finetuned_all-MiniLM-L6-v2_epoch_50')
+answers_embedding = bi_encoder50.encode(list(collection_dic.values()), convert_to_tensor=True)
+bi_encoder50 = bi_encoder50.to(device)
+
+print("making binary encoder results topic 1:")
+start_time = time.time()
+biencoder_top_answers = get_top_answers(bi_encoder50,queries, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder50: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers,"result_bi_ft50_1.tsv", bi_encoder50)
+
+print("making binary encoder results topic 2:")
+start_time = time.time()
+biencoder_top_answers_2 = get_top_answers(bi_encoder50,queries2, k=100) #BI-ENCODER RESULTS
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time for binary encoder50: {execution_time:.4f} seconds")
+make_tsv_file(biencoder_top_answers_2,"result_bi_ft50_2.tsv", bi_encoder50)
+
+
