@@ -22,8 +22,8 @@ All files were run on either Mason's computer, usm lab computers, or Google Cola
 - **qrel_1.tsv** - tsv file with relevance to topic_1 queries and answers
 
 ## Models
-- **all-MiniLM-L6-v2** 
-- **cross-encoder/ms-marco-TinyBERT-L-2-v2** 
+- [**all-MiniLM-L6-v2**](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) 
+- [**cross-encoder/ms-marco-TinyBERT-L-2-v2**](https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L-2) 
 
 ## Usage 
 make_regular_results.py - returns base Bi-encoder and Cross-Encoder results files for 
