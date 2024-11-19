@@ -1,22 +1,16 @@
 import csv
-import datetime
 import json
 import string
 import time
 import math
-import random
-import os
 import re
 import sys
 from bs4 import BeautifulSoup 
-from string import punctuation
 import torch
 from sentence_transformers import InputExample
-from sentence_transformers.cross_encoder.evaluation import CESoftmaxAccuracyEvaluator, CEBinaryClassificationEvaluator, \
-    CERerankingEvaluator
+from sentence_transformers.cross_encoder.evaluation import CERerankingEvaluator
 from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, SentencesDataset, InputExample, CrossEncoder, util, losses, evaluation
-from itertools import islice
+from sentence_transformers import InputExample, CrossEncoder, losses
 
 if len(sys.argv) != 4:
     print("Usage: python train_crossencoder.py <topics_1.json> <qrel_1.tsv> <Answers.json>")

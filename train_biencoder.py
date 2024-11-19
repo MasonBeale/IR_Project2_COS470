@@ -1,22 +1,15 @@
 import csv
-import datetime
 import json
 import string
-import time
 import math
 import random
-import os
 import re
 import sys
 from bs4 import BeautifulSoup 
-
-from string import punctuation
 import torch
 from sentence_transformers import InputExample
-from sentence_transformers.cross_encoder.evaluation import CESoftmaxAccuracyEvaluator, CEBinaryClassificationEvaluator, \
-    CERerankingEvaluator
 from torch.utils.data import DataLoader
-from sentence_transformers import SentenceTransformer, SentencesDataset, InputExample, CrossEncoder, util, losses, evaluation
+from sentence_transformers import SentenceTransformer, SentencesDataset, InputExample, losses, evaluation
 from itertools import islice
 
 if len(sys.argv) != 4:
