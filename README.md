@@ -5,7 +5,7 @@
 This project implements both a Bi-Encoder (using `SentenceTransformer`) and a Cross-Encoder for re-ranking top results from the Bi-Encoder, applied to information retrieval tasks. The code uses topic and answer files in JSON format, and outputs ranked results in TSV format. The project also trains and fine tunes models using the qrel file.
 
 ## Note 
-All files were run on either Mason's computer or Google Colab. 
+All files were run on either Mason's computer, usm lab computers, or Google Colab. Different configurations and dependancies may apply to your system. 
 
 ## Files
 
@@ -16,29 +16,26 @@ All files were run on either Mason's computer or Google Colab.
 
 ## Models
 - **all-MiniLM-L6-v2** 
-- **finetuned_all-MiniLM-L6-v2_epoch_10**
-
 - **cross-encoder/ms-marco-TinyBERT-L-2-v2** 
-- **ft_cr_2024** - Fine tuned version of the Cross-encoder above
 
 ## Usage 
-making_regular_results.py - returns base Bi-encoder and Cross-Encoder results files for 
+make_regular_results.py - returns base Bi-encoder and Cross-Encoder results files for 
 topic's 1 and 2.
 ``` bash
-python making_regular_results.py <topics_1.json> <topics_2.json> <Answers.json>
+python make_regular_results.py <topics_1.json> <topics_2.json> <Answers.json>
 ```
-making_trained_results.py - returns finetuned Bi-encoder and Cross-Encoder results files for 
+make_trained_results.py - returns finetuned Bi-encoder and Cross-Encoder results files for 
 topic's 1 and 2.
 ``` bash
-python making_trained_results.py <topics_1.json> <topics_2.json> <Answers.json>
+python make_trained_results.py <topics_1.json> <topics_2.json> <Answers.json>
 ```
 train_finetuned_bi.py - trains the Bi-encoder model up to 50 epochs in 16 batches and saves the 10,20,...,50 models and gives results for every model
 ``` bash
-python train_finetuned_bi.py <topics_1.json> <qrel_1.tsv> <Answers.json>
+python train_biencoder.py <topics_1.json> <qrel_1.tsv> <Answers.json>
 ```
 train_finetuned_ce.py - trains the Cross-encoder model up to 2 epochs and saves the model
 ``` bash
-python train_finetuned_ce.py <topics_1.json> <qrel_1.tsv> <Answers.json>
+python train_crossencoder.py <topics_1.json> <qrel_1.tsv> <Answers.json>
 ```
 
 ## Requirements
@@ -48,10 +45,11 @@ The code requires the following libraries:
 - `sentence_transformers`
 - `datasets`
 - `beautifulsoup4`
+- `tqdm`
 
 Run the following command to install the required packages:
 ```bash
-pip install torch sentence-transformers beautifulsoup4 datasets
+pip install torch sentence-transformers beautifulsoup4 datasets tqdm
 ```
 
 
