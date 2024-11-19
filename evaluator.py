@@ -5,7 +5,7 @@ import json
 import matplotlib.pyplot as plt
 
 results = {}
-with open('ft_bi_results\\result_bi_ft50_1.tsv', mode='r', newline='') as file:
+with open('ft_cross_results\\result_ce_ft50_1.tsv', mode='r', newline='') as file:
     reader = csv.reader(file, delimiter='\t')
     for line in reader:
         topicID = line[0]
@@ -52,7 +52,7 @@ for topic in eval:
     }
 
 # Save the query results to a JSON file
-with open('eval_bi_e10.json', 'w') as json_file:
+with open('eval_store.json', 'w') as json_file:
     json.dump(query_results, json_file, indent=4)
 
 # Calculate averages
